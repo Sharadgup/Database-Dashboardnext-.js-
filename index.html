@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            overflow: hidden;
+            padding: 0 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .card {
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            display: inline-block;
+            background: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #444;
+        }
+        #message {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Database Dashboard</h1>
+        
+        <div class="card">
+            <h2>Quick Actions</h2>
+            <button onclick="handleOperation('createTable')">Create Table</button>
+            <button onclick="handleOperation('dropTable')">Drop Table</button>
+            <button onclick="handleOperation('refreshDatabase')">Refresh Database</button>
+        </div>
+        
+        <div class="card">
+            <h2>Insert Record</h2>
+            <form id="insertForm">
+                <div class="form-group">
+                    <label for="insertName">Name:</label>
+                    <input type="text" id="insertName" required>
+                </div>
+                <div class="form-group">
+                    <label for="insertDescription">Description:</label>
+                    <textarea id="insertDescription" required></textarea>
+                </div>
+                <button type="submit">Insert Record</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2>Update Record</h2>
+            <form id="updateForm">
+                <div class="form-group">
+                    <label for="updateId">ID:</label>
+                    <input type="number" id="updateId" required>
+                </div>
+                <div class="form-group">
+                    <label for="updateName">New Name:</label>
+                    <input type="text" id="updateName" required>
+                </div>
+                <div class="form-group">
+                    <label for="updateDescription">New Description:</label>
+                    <textarea id="updateDescription" required></textarea>
+                </div>
+                <button type="submit">Update Record</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2>Delete Record</h2>
+            <form id="deleteForm">
+                <div class="form-group">
+                    <label for="deleteId">ID:</label>
+                    <input type="number" id="deleteId" required>
+                </div>
+                <button type="submit">Delete Record</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2>File Upload</h2>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="fileUpload">Select File:</label>
+                    <input type="file" id="fileUpload" required>
+                </div>
+                <button type="submit">Upload File</button>
+            </form>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+
+        async function handleOperation(operation, data = {}) {
+            let url = API_BASE_URL;
+            let method = 'POST';
+            let body = null;
+
+            switch(operation) {
+                case 'createTable':
+                    url += '/create_table';
+                    break;
+                case 'dropTable':
+                    url += '/drop_table';
+                    break;
+                case 'refreshDatabase':
+                    url += '/refresh';
+                    break;
+                case 'insert':
+                    url += '/insert';
+                    body = JSON.stringify(data);
+                    break;
+                case 'update':
+                    url += `/update/${data.id}`;
+                    method = 'PUT';
+                    body = JSON.stringify(data);
+                    break;
+                case 'delete':
+                    url += `/delete/${data.id}`;
+                    method = 'DELETE';
+                    break;
+                case 'upload':
+                    url += '/upload';
+                    body = new FormData();
+                    body.append('file', data.file);
+                    break;
+                default:
+                    showMessage('Unknown operation', true);
+                    return;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: body instanceof FormData ? {} : { 'Content-Type': 'application/json' },
+                    body: body
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(result.message);
+                } else {
+                    showMessage(result.error || 'An error occurred', true);
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, true);
+            }
+        }
+
+        function showMessage(message, isError = false) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = message;
+            messageElement.style.display = 'block';
+            messageElement.style.background = isError ? '#f8d7da' : '#d4edda';
+            messageElement.style.color = isError ? '#721c24' : '#155724';
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 3000);
+        }
+
+        document.getElementById('insertForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('insertName').value;
+            const description = document.getElementById('insertDescription').value;
+            handleOperation('insert', { name, description });
+            this.reset();
+        });
+
+        document.getElementById('updateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('updateId').value;
+            const name = document.getElementById('updateName').value;
+            const description = document.getElementById('updateDescription').value;
+            handleOperation('update', { id, name, description });
+            this.reset();
+        });
+
+        document.getElementById('deleteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('deleteId').value;
+            handleOperation('delete', { id });
+            this.reset();
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('fileUpload');
+            if (fileInput.files.length > 0) {
+                handleOperation('upload', { file: fileInput.files[0] });
+            } else {
+                showMessage('Please select a file to upload', true);
+            }
+            this.reset();
+        });
+    </script>
+</body>
+</html>
