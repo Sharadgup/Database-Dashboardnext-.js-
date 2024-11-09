@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import os
@@ -21,6 +21,11 @@ class Item(db.Model):
 # Create the database tables
 with app.app_context():
     db.create_all()
+
+# Serve the HTML file
+@app.route('/')
+def serve_dashboard():
+    return send_from_directory('.', 'index.html')
 
 @app.route('/api/create_table', methods=['POST'])
 def create_table():
