@@ -8,13 +8,18 @@ import traceback
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
 
-# Configure the MongoDB database
+# Configure the MongoDB Atlas connection
+MONGO_URI = 'mongodb+srv://shardgupta65:Typer%401345@cluster0.sp87qsr.mongodb.net/chatgpt'
+
 try:
-    client = MongoClient('mongodb://localhost:27017/')
-    db = client['dashboard_db']
+    client = MongoClient(MONGO_URI)
+    db = client['chatgpt']  # Use the database name from your connection string
     items_collection = db['items']
+    # Test the connection
+    client.admin.command('ping')
+    print("Successfully connected to MongoDB Atlas!")
 except Exception as e:
-    print(f"Error connecting to MongoDB: {e}")
+    print(f"Error connecting to MongoDB Atlas: {e}")
     exit(1)
 
 # Serve the HTML file
