@@ -11,6 +11,7 @@
             --background-color: #ecf0f1;
             --text-color: #34495e;
             --card-bg-color: #ffffff;
+            --error-color: #e74c3c;
         }
 
         body {
@@ -122,6 +123,7 @@
             color: white;
             font-weight: bold;
             display: none;
+            z-index: 1000;
         }
 
         .success {
@@ -129,7 +131,7 @@
         }
 
         .error {
-            background-color: #e74c3c;
+            background-color: var(--error-color);
         }
 
         .loading {
@@ -306,10 +308,12 @@
                         await refreshDataTable();
                     }
                 } else {
-                    showMessage(result.error || 'An error occurred', true);
+                    showMessage(`Error: ${result.error}`, true);
+                    console.error('Full error details:', result);
                 }
             } catch (error) {
-                showMessage('Error: ' + error.message, true);
+                showMessage(`Network error: ${error.message}`, true);
+                console.error('Full error details:', error);
             } finally {
                 hideLoading();
             }
@@ -322,7 +326,7 @@
             messageElement.style.display = 'block';
             setTimeout(() => {
                 messageElement.style.display = 'none';
-            }, 3000);
+            }, 5000);
         }
 
         function showLoading() {
@@ -337,6 +341,9 @@
             showLoading();
             try {
                 const response = await fetch(`${API_BASE_URL}/items`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const items = await response.json();
                 const tableBody = document.querySelector('#dataTable tbody');
                 tableBody.innerHTML = '';
@@ -356,7 +363,8 @@
                     actionsCell.appendChild(deleteButton);
                 });
             } catch (error) {
-                showMessage('Error fetching data: ' + error.message, true);
+                showMessage(`Error fetching data: ${error.message}`, true);
+                console.error('Full error details:', error);
             } finally {
                 hideLoading();
             }
