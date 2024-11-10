@@ -4,25 +4,28 @@ from pymongo import MongoClient
 from bson import ObjectId
 import os
 import traceback
+import logging
 
 app = Flask(__name__)
-CORS(app)  # This will enable CORS for all routes
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # Allow all origins for /api/ routes
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 # Configure the MongoDB Atlas connection
 MONGO_URI = 'mongodb+srv://shardgupta65:Typer%401345@cluster0.sp87qsr.mongodb.net/chatgpt'
 
 try:
     client = MongoClient(MONGO_URI)
-    db = client['chatgpt']  # Use the database name from your connection string
+    db = client['chatgpt']
     items_collection = db['items']
     # Test the connection
     client.admin.command('ping')
-    print("Successfully connected to MongoDB Atlas!")
+    app.logger.info("Successfully connected to MongoDB Atlas!")
 except Exception as e:
-    print(f"Error connecting to MongoDB Atlas: {e}")
+    app.logger.error(f"Error connecting to MongoDB Atlas: {e}")
     exit(1)
 
-# Serve the HTML file
 @app.route('/')
 def serve_dashboard():
     return send_from_directory('.', 'index.html')
@@ -30,12 +33,11 @@ def serve_dashboard():
 @app.route('/api/create_table', methods=['POST'])
 def create_table():
     try:
-        # In MongoDB, collections are created automatically when you insert data
-        # So we'll just insert a dummy document and then remove it
         dummy_id = items_collection.insert_one({"dummy": True}).inserted_id
         items_collection.delete_one({"_id": dummy_id})
         return jsonify({"message": "Collection created successfully"}), 201
     except Exception as e:
+        app.logger.error(f"Error creating table: {str(e)}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/drop_table', methods=['POST'])
@@ -44,6 +46,7 @@ def drop_table():
         items_collection.drop()
         return jsonify({"message": "Collection dropped successfully"}), 200
     except Exception as e:
+        app.logger.error(f"Error dropping table: {str(e)}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/refresh', methods=['POST'])
@@ -54,6 +57,7 @@ def refresh_database():
         items_collection.delete_one({"_id": dummy_id})
         return jsonify({"message": "Database refreshed successfully"}), 200
     except Exception as e:
+        app.logger.error(f"Error refreshing database: {str(e)}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/insert', methods=['POST'])
@@ -68,6 +72,7 @@ def insert_item():
         })
         return jsonify({"message": "Item inserted successfully", "id": str(result.inserted_id)}), 201
     except Exception as e:
+        app.logger.error(f"Error inserting item: {str(e)}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/update/<id>', methods=['PUT'])
@@ -84,6 +89,7 @@ def update_item(id):
             return jsonify({"error": "Item not found"}), 404
         return jsonify({"message": "Item updated successfully"}), 200
     except Exception as e:
+        app.logger.error(f"Error updating item: {str(e)}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/delete/<id>', methods=['DELETE'])
@@ -94,6 +100,7 @@ def delete_item(id):
             return jsonify({"error": "Item not found"}), 404
         return jsonify({"message": "Item deleted successfully"}), 200
     except Exception as e:
+        app.logger.error(f"Error deleting item: {str(e)}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/upload', methods=['POST'])
@@ -109,6 +116,7 @@ def upload_file():
             file.save(os.path.join('uploads', filename))
             return jsonify({"message": "File uploaded successfully", "filename": filename}), 201
     except Exception as e:
+        app.logger.error(f"Error uploading file: {str(e)}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/items', methods=['GET'])
@@ -119,6 +127,7 @@ def get_items():
             item['_id'] = str(item['_id'])  # Convert ObjectId to string
         return jsonify(items), 200
     except Exception as e:
+        app.logger.error(f"Error fetching items: {str(e)}")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 if __name__ == '__main__':
