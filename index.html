@@ -3,39 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Dashboard</title>
+    <title>Cool Smart Dashboard</title>
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --card-bg-color: #ffffff;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
+
         .container {
-            max-width: 800px;
-            margin: auto;
-            overflow: hidden;
-            padding: 0 20px;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        .card {
-            background: #fff;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
+            font-weight: bold;
         }
+
         input[type="text"],
         input[type="number"],
         textarea {
@@ -43,104 +75,186 @@
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
         }
+
         button {
-            display: inline-block;
-            background: #333;
-            color: #fff;
-            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
             border: none;
+            padding: 10px 15px;
             border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
+
         button:hover {
-            background: #444;
+            background-color: #2980b9;
         }
-        #message {
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
-            padding: 10px;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        #message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
             border-radius: 4px;
+            color: white;
+            font-weight: bold;
             display: none;
+        }
+
+        .success {
+            background-color: var(--secondary-color);
+        }
+
+        .error {
+            background-color: #e74c3c;
+        }
+
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .loading::after {
+            content: "";
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Database Dashboard</h1>
-        
-        <div class="card">
-            <h2>Quick Actions</h2>
-            <button onclick="handleOperation('createTable')">Create Table</button>
-            <button onclick="handleOperation('dropTable')">Drop Table</button>
-            <button onclick="handleOperation('refreshDatabase')">Refresh Database</button>
+        <h1>Cool Smart Dashboard</h1>
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>Quick Actions</h2>
+                <button onclick="handleOperation('createTable')">Create Table</button>
+                <button onclick="handleOperation('dropTable')">Drop Table</button>
+                <button onclick="handleOperation('refreshDatabase')">Refresh Database</button>
+            </div>
+            
+            <div class="card">
+                <h2>Insert Record</h2>
+                <form id="insertForm">
+                    <div class="form-group">
+                        <label for="insertName">Name:</label>
+                        <input type="text" id="insertName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="insertDescription">Description:</label>
+                        <textarea id="insertDescription" required></textarea>
+                    </div>
+                    <button type="submit">Insert Record</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>Update Record</h2>
+                <form id="updateForm">
+                    <div class="form-group">
+                        <label for="updateId">ID:</label>
+                        <input type="text" id="updateId" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="updateName">New Name:</label>
+                        <input type="text" id="updateName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="updateDescription">New Description:</label>
+                        <textarea id="updateDescription" required></textarea>
+                    </div>
+                    <button type="submit">Update Record</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>Delete Record</h2>
+                <form id="deleteForm">
+                    <div class="form-group">
+                        <label for="deleteId">ID:</label>
+                        <input type="text" id="deleteId" required>
+                    </div>
+                    <button type="submit">Delete Record</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>File Upload</h2>
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="fileUpload">Select File:</label>
+                        <input type="file" id="fileUpload" required>
+                    </div>
+                    <button type="submit">Upload File</button>
+                </form>
+            </div>
         </div>
-        
+
         <div class="card">
-            <h2>Insert Record</h2>
-            <form id="insertForm">
-                <div class="form-group">
-                    <label for="insertName">Name:</label>
-                    <input type="text" id="insertName" required>
-                </div>
-                <div class="form-group">
-                    <label for="insertDescription">Description:</label>
-                    <textarea id="insertDescription" required></textarea>
-                </div>
-                <button type="submit">Insert Record</button>
-            </form>
+            <h2>Data Table</h2>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be dynamically inserted here -->
+                </tbody>
+            </table>
         </div>
-        
-        <div class="card">
-            <h2>Update Record</h2>
-            <form id="updateForm">
-                <div class="form-group">
-                    <label for="updateId">ID:</label>
-                    <input type="number" id="updateId" required>
-                </div>
-                <div class="form-group">
-                    <label for="updateName">New Name:</label>
-                    <input type="text" id="updateName" required>
-                </div>
-                <div class="form-group">
-                    <label for="updateDescription">New Description:</label>
-                    <textarea id="updateDescription" required></textarea>
-                </div>
-                <button type="submit">Update Record</button>
-            </form>
-        </div>
-        
-        <div class="card">
-            <h2>Delete Record</h2>
-            <form id="deleteForm">
-                <div class="form-group">
-                    <label for="deleteId">ID:</label>
-                    <input type="number" id="deleteId" required>
-                </div>
-                <button type="submit">Delete Record</button>
-            </form>
-        </div>
-        
-        <div class="card">
-            <h2>File Upload</h2>
-            <form id="uploadForm">
-                <div class="form-group">
-                    <label for="fileUpload">Select File:</label>
-                    <input type="file" id="fileUpload" required>
-                </div>
-                <button type="submit">Upload File</button>
-            </form>
-        </div>
-        
-        <div id="message"></div>
     </div>
+
+    <div id="message"></div>
+    <div class="loading"></div>
 
     <script>
         const API_BASE_URL = 'http://localhost:5000/api';
 
         async function handleOperation(operation, data = {}) {
+            showLoading();
             let url = API_BASE_URL;
             let method = 'POST';
             let body = null;
@@ -175,6 +289,7 @@
                     break;
                 default:
                     showMessage('Unknown operation', true);
+                    hideLoading();
                     return;
             }
 
@@ -187,23 +302,70 @@
                 const result = await response.json();
                 if (response.ok) {
                     showMessage(result.message);
+                    if (operation === 'insert' || operation === 'update' || operation === 'delete') {
+                        await refreshDataTable();
+                    }
                 } else {
                     showMessage(result.error || 'An error occurred', true);
                 }
             } catch (error) {
                 showMessage('Error: ' + error.message, true);
+            } finally {
+                hideLoading();
             }
         }
 
         function showMessage(message, isError = false) {
             const messageElement = document.getElementById('message');
             messageElement.textContent = message;
+            messageElement.className = isError ? 'error' : 'success';
             messageElement.style.display = 'block';
-            messageElement.style.background = isError ? '#f8d7da' : '#d4edda';
-            messageElement.style.color = isError ? '#721c24' : '#155724';
             setTimeout(() => {
                 messageElement.style.display = 'none';
             }, 3000);
+        }
+
+        function showLoading() {
+            document.querySelector('.loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.querySelector('.loading').style.display = 'none';
+        }
+
+        async function refreshDataTable() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE_URL}/items`);
+                const items = await response.json();
+                const tableBody = document.querySelector('#dataTable tbody');
+                tableBody.innerHTML = '';
+                items.forEach(item => {
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).textContent = item._id;
+                    row.insertCell(1).textContent = item.name;
+                    row.insertCell(2).textContent = item.description;
+                    const actionsCell = row.insertCell(3);
+                    const updateButton = document.createElement('button');
+                    updateButton.textContent = 'Update';
+                    updateButton.onclick = () => populateUpdateForm(item);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.onclick = () => handleOperation('delete', { id: item._id });
+                    actionsCell.appendChild(updateButton);
+                    actionsCell.appendChild(deleteButton);
+                });
+            } catch (error) {
+                showMessage('Error fetching data: ' + error.message, true);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function populateUpdateForm(item) {
+            document.getElementById('updateId').value = item._id;
+            document.getElementById('updateName').value = item.name;
+            document.getElementById('updateDescription').value = item.description;
         }
 
         document.getElementById('insertForm').addEventListener('submit', function(e) {
@@ -220,7 +382,6 @@
             const name = document.getElementById('updateName').value;
             const description = document.getElementById('updateDescription').value;
             handleOperation('update', { id, name, description });
-            this.reset();
         });
 
         document.getElementById('deleteForm').addEventListener('submit', function(e) {
@@ -240,6 +401,9 @@
             }
             this.reset();
         });
+
+        // Initial data load
+        refreshDataTable();
     </script>
 </body>
 </html>
