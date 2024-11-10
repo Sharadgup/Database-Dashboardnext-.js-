@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
 
 # Configure the MongoDB database
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient('mongodb+srv://shardgupta65:Typer%401345@cluster0.sp87qsr.mongodb.net/chatgpt')
 db = client['dashboard_db']
 items_collection = db['items']
 
