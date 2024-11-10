@@ -1,26 +1,16 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+from pymongo import MongoClient
+from bson import ObjectId
 import os
 
 app = Flask(__name__)
 CORS(app)  # This will enable CORS for all routes
 
-# Configure the SQLite database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-
-# Define the Item model
-class Item(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-
-# Create the database tables
-with app.app_context():
-    db.create_all()
+# Configure the MongoDB database
+client = MongoClient('mongodb://localhost:27017/')
+db = client['dashboard_db']
+items_collection = db['items']
 
 # Serve the HTML file
 @app.route('/')
@@ -30,27 +20,28 @@ def serve_dashboard():
 @app.route('/api/create_table', methods=['POST'])
 def create_table():
     try:
-        with app.app_context():
-            db.create_all()
-        return jsonify({"message": "Table created successfully"}), 201
+        # In MongoDB, collections are created automatically when you insert data
+        # So we'll just insert a dummy document and then remove it
+        dummy_id = items_collection.insert_one({"dummy": True}).inserted_id
+        items_collection.delete_one({"_id": dummy_id})
+        return jsonify({"message": "Collection created successfully"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/drop_table', methods=['POST'])
 def drop_table():
     try:
-        with app.app_context():
-            db.drop_all()
-        return jsonify({"message": "Table dropped successfully"}), 200
+        items_collection.drop()
+        return jsonify({"message": "Collection dropped successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/refresh', methods=['POST'])
 def refresh_database():
     try:
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
+        items_collection.drop()
+        dummy_id = items_collection.insert_one({"dummy": True}).inserted_id
+        items_collection.delete_one({"_id": dummy_id})
         return jsonify({"message": "Database refreshed successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -58,37 +49,37 @@ def refresh_database():
 @app.route('/api/insert', methods=['POST'])
 def insert_item():
     data = request.json
-    new_item = Item(name=data['name'], description=data['description'])
     try:
-        db.session.add(new_item)
-        db.session.commit()
-        return jsonify({"message": "Item inserted successfully", "id": new_item.id}), 201
+        result = items_collection.insert_one({
+            "name": data['name'],
+            "description": data['description']
+        })
+        return jsonify({"message": "Item inserted successfully", "id": str(result.inserted_id)}), 201
     except Exception as e:
-        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/update/<int:id>', methods=['PUT'])
+@app.route('/api/update/<id>', methods=['PUT'])
 def update_item(id):
-    item = Item.query.get_or_404(id)
     data = request.json
     try:
-        item.name = data['name']
-        item.description = data['description']
-        db.session.commit()
+        result = items_collection.update_one(
+            {"_id": ObjectId(id)},
+            {"$set": {"name": data['name'], "description": data['description']}}
+        )
+        if result.modified_count == 0:
+            return jsonify({"error": "Item not found"}), 404
         return jsonify({"message": "Item updated successfully"}), 200
     except Exception as e:
-        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/delete/<int:id>', methods=['DELETE'])
+@app.route('/api/delete/<id>', methods=['DELETE'])
 def delete_item(id):
-    item = Item.query.get_or_404(id)
     try:
-        db.session.delete(item)
-        db.session.commit()
+        result = items_collection.delete_one({"_id": ObjectId(id)})
+        if result.deleted_count == 0:
+            return jsonify({"error": "Item not found"}), 404
         return jsonify({"message": "Item deleted successfully"}), 200
     except Exception as e:
-        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/upload', methods=['POST'])
